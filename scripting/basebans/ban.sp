@@ -104,13 +104,38 @@ void DisplayBanTimeMenu(int client)
 	menu.SetTitle(title);
 	menu.ExitBackButton = true;
 
-	menu.AddItem("0", "Permanent");
-	menu.AddItem("10", "10 Minutes");
-	menu.AddItem("30", "30 Minutes");
-	menu.AddItem("60", "1 Hour");
-	menu.AddItem("240", "4 Hours");
-	menu.AddItem("1440", "1 Day");
-	menu.AddItem("10080", "1 Week");
+	int _iSize = LimitBan_GetSize();
+	if(!g_bLimitBan || !_iSize)
+	{
+		menu.AddItem("0", "Permanent");
+		menu.AddItem("10", "10 Minutes");
+		menu.AddItem("30", "30 Minutes");
+		menu.AddItem("60", "1 Hour");
+		menu.AddItem("240", "4 Hours");
+		menu.AddItem("1440", "1 Day");
+		menu.AddItem("10080", "1 Week");
+	}
+	else
+	{
+		char _sDisplay[64];
+		char _sLength[32];
+		for(int i = 0; i <= _iSize; i++)
+		{
+			if(LimitBan_GetAccess(i, client))
+			{
+				int _iLength = LimitBan_GetLength(i);
+				IntToString(_iLength, _sLength, sizeof(_sLength));
+				LimitBan_GetDisplay(i, _sDisplay);
+				AddMenuItem(menu, _sLength, _sDisplay);
+			}
+		}
+		
+		if(LimitBan_GetAccess(-1, client))
+		{
+			LimitBan_GetDisplay(-1, _sDisplay);
+			AddMenuItem(menu, "0", _sDisplay);
+		}
+	}
 
 	menu.Display(client, MENU_TIME_FOREVER);
 }

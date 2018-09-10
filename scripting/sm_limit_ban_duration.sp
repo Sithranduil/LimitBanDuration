@@ -122,7 +122,7 @@ public OnPluginStart()
 	LoadTranslations("common.phrases");
 	LoadTranslations("sm_limit_ban_duration.phrases");
 
-	CreateConVar("sm_limit_ban_duration_version", PLUGIN_VERSION, "Limit Ban Duration: Version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	CreateConVar("sm_limit_ban_duration_version", PLUGIN_VERSION, "Limit Ban Duration: Version", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 
 	g_hEnabled = CreateConVar("sm_limit_ban_duration_enabled", "1", "Enables/disables all features of this plugin.", FCVAR_NONE, true, 0.0, true, 1.0);
 	HookConVarChange(g_hEnabled, OnSettingsChange);
@@ -331,7 +331,7 @@ Bool_IssueBan(client, index, const String:buffer[])
 	_iLength += BreakString(buffer[_iLength], _sBuffer, sizeof(_sBuffer));
 	strcopy(_sBuffer, sizeof(_sBuffer), buffer[_iLength]);
 	if(g_bSourceBans)
-		SBBanPlayer(client, _iTarget, g_iDurationLength[index], _sBuffer);
+		SourceBans_BanPlayer(client, _iTarget, g_iDurationLength[index], _sBuffer);
 	else
 		BanClient(_iTarget, g_iDurationLength[index], BANFLAG_AUTO, _sBuffer);
 	return true;
