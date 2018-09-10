@@ -1,0 +1,35 @@
+"Phrases"
+{
+	//====================================================================
+	"Prefix_Plugin"
+	{
+		"#format"	""
+		"en"		"[SM] "	
+	}
+	//====================================================================
+	"Phrase_No_Access"
+	{
+		"#format"	""
+		"en"		"You do not have access to this command!"
+	}	
+	"Phrase_Illegal_Ban_Length"
+	{
+		"#format"	"{1:d}"
+		"en"		"You do not have permission to issue bans for more than {1} minutes!"
+	}	
+	"Phrase_Illegal_Ban_Perm"
+	{
+		"#format"	""
+		"en"		"You do not have permission to issue permanent bans!"
+	}	
+	"Phrase_Reduced_Perm_Length"
+	{
+		"#format"	"{1:d}"
+		"en"		"You cannot issue permanent bans! Your ban length was automatically lowered to {1} minutes."
+	}
+	"Phrase_Reduced_Ban_Length"
+	{
+		"#format"	"{1:d}"
+		"en"		"You cannot ban for more than {1} minutes! Your ban length was automatically lowered."
+	}
+}

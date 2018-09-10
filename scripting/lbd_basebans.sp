@@ -36,6 +36,7 @@
 #include <sourcemod>
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
+#include <sm_limit_ban_duration>
 
 #pragma newdecls required
 
@@ -43,13 +44,14 @@ public Plugin myinfo =
 {
 	name = "Basic Ban Commands",
 	author = "AlliedModders LLC",
-	description = "Basic Banning Commands",
+	description = "Basic Banning Commands, with optional Limit Ban Duration support.",
 	version = SOURCEMOD_VERSION,
 	url = "http://www.sourcemod.net/"
 };
 
 TopMenu hTopMenu;
 
+bool g_bLimitBan;
 int g_BanTarget[MAXPLAYERS+1];
 int g_BanTargetUserId[MAXPLAYERS+1];
 int g_BanTime[MAXPLAYERS+1];
@@ -86,9 +88,33 @@ public void OnPluginStart()
 	}
 }
 
-public void OnMapStart()
+
+public void OnLibraryRemoved(const char [] name)
 {
-	//(Re-)Load BanReasons
+	if(StrEqual(name, "sm_limit_ban_duration"))
+		g_bLimitBan = false;
+}
+ 
+public void OnLibraryAdded(const char [] name)
+{
+	if(StrEqual(name, "sm_limit_ban_duration"))
+		g_bLimitBan = true;
+}
+
+public void OnConfigsExecuted()
+{
+	char _sPath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, _sPath, sizeof(_sPath), "plugins/basebans.smx");
+	if(FileExists(_sPath))
+	{
+		char _sNewPath[PLATFORM_MAX_PATH];
+		BuildPath(Path_SM, _sNewPath, sizeof(_sNewPath), "plugins/disabled/basebans.smx");
+		ServerCommand("sm plugins unload basebans");
+		if(FileExists(_sNewPath))
+			DeleteFile(_sNewPath);
+		RenameFile(_sNewPath, _sPath);
+		LogMessage("plugins/basebans.smx was unloaded and moved to plugins/disabled/basebans.smx");
+	}
 	LoadBanReasons();
 }
 
@@ -296,6 +322,13 @@ public Action Command_AddBan(int client, int args)
 	if (!idValid)
 	{
 		ReplyToCommand(client, "[SM] %t", "Invalid SteamID specified");
+		return Plugin_Handled;
+	}
+
+	AdminId tid = FindAdminByIdentity("steam", authid);
+	if (client && !CanAdminTarget(GetUserAdmin(client), tid))
+	{
+		ReplyToCommand(client, "[SM] %t", "No Access");
 		return Plugin_Handled;
 	}
 
