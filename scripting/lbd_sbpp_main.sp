@@ -30,6 +30,7 @@
 
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
+#include <sm_limit_ban_duration>
 #tryinclude <updater>
 
 #define SB_VERSION "1.6.3"
@@ -101,7 +102,8 @@ bool
 	, requireSiteLogin = false /* Require a lastvisited from SB site */
 	, backupConfig = true
 	, enableAdmins = true
-	, PlayerStatus[MAXPLAYERS + 1]; /* Player ban check status */
+	, PlayerStatus[MAXPLAYERS + 1] /* Player ban check status */
+	, g_bLimitBan;
 
 int
 	g_BanTarget[MAXPLAYERS + 1] =  { -1, ... }
@@ -125,8 +127,8 @@ Handle
 public Plugin myinfo =
 {
 	name = "SourceBans++: Main Plugin",
-	author = "SourceBans Development Team, SourceBans++ Dev Team",
-	description = "Advanced ban management for the Source engine",
+	author = "SourceBans Development Team, SourceBans++ Dev Team, Sithranduil",
+	description = "Advanced ban management for the Source engine, with optional Limit Ban Duration support.",
 	version = SBR_VERSION,
 	url = "https://sbpp.github.io"
 };
@@ -236,15 +238,26 @@ public OnPluginStart()
 	#endif
 }
 
-#if defined _updater_included
 public void OnLibraryAdded(const char[] name)
 {
+	#if defined _updater_included
 	if (StrEqual(name, "updater"))
 	{
 		Updater_AddPlugin(UPDATE_URL);
 	}
+	#endif
+
+	if(StrEqual(name, "sm_limit_ban_duration")){
+		g_bLimitBan = true;
+	}
 }
-#endif
+
+public void OnLibraryRemoved(const char[] name)
+{
+	if(StrEqual(name, "sm_limit_ban_duration")){
+		g_bLimitBan = false;
+	}
+}
 
 public void OnAllPluginsLoaded()
 {
@@ -257,6 +270,8 @@ public void OnAllPluginsLoaded()
 	{
 		OnAdminMenuReady(topmenu);
 	}
+
+	g_bLimitBan = LibraryExists("sm_limit_ban_duration");
 }
 
 public void OnConfigsExecuted()
@@ -272,6 +287,18 @@ public void OnConfigsExecuted()
 			DeleteFile(newfilename);
 		RenameFile(newfilename, filename);
 		LogToFile(logFile, "plugins/basebans.smx was unloaded and moved to plugins/disabled/basebans.smx");
+	}
+
+	BuildPath(Path_SM, filename, sizeof(filename), "plugins/sbpp_main.smx");
+	if(FileExists(filename))
+	{
+		char newfilename[PLATFORM_MAX_PATH];
+		BuildPath(Path_SM, newfilename, sizeof(newfilename), "plugins/disabled/sbpp_main.smx");
+		ServerCommand("sm plugins unload sbpp_main");
+		if(FileExists(newfilename))
+			DeleteFile(newfilename);
+		RenameFile(newfilename, filename);
+		LogToFile(logFile, "plugins/sbpp_main.smx was unloaded and moved to plugins/disabled/sbpp_main.smx");
 	}
 }
 
@@ -978,9 +1005,66 @@ stock void DisplayBanTargetMenu(int client)
 	DisplayMenu(menu, client, MENU_TIME_FOREVER); // Show the menu to the client FOREVER!
 }
 
-stock void DisplayBanTimeMenu(int client)
+stock DisplayBanTimeMenu(client)
 {
-	
+	PrintToChat(client, "other3");
+	#if defined DEBUG
+	LogToFile(logFile, "DisplayBanTimeMenu()");
+	#endif
+
+	new Handle:menu;
+	if(g_bLimitBan && LimitBan_GetSize() > 0){
+		menu = CreateMenu(MenuHandler_BanTimeList, MenuAction_Select | MenuAction_Cancel | MenuAction_DrawItem);
+	} else {
+		menu = CreateMenu(MenuHandler_BanTimeList, MenuAction_Select | MenuAction_Cancel | MenuAction_DrawItem);
+	}
+
+	decl String:title[100];
+	Format(title, sizeof(title), "%T:", "Ban player", client);
+	//Format(title, sizeof(title), "Ban player", client);
+	SetMenuTitle(menu, title);
+	SetMenuExitBackButton(menu, true);
+		
+	if(g_bLimitBan && LimitBan_GetSize() > 0)
+	{
+		char _sDisplay[64];
+		char _sLength[32];
+		for(int i = 0; i <= LimitBan_GetSize(); i++)
+		{
+			if(LimitBan_GetAccess(i, client))
+			{
+				int _iLength = LimitBan_GetLength(i);
+				IntToString(_iLength, _sLength, sizeof(_sLength));
+				LimitBan_GetDisplay(i, _sDisplay);
+				AddMenuItem(menu, _sLength, _sDisplay);
+			}
+		}
+		
+		if(LimitBan_GetAccess(-1, client) && CheckCommandAccess(client, "sm_unban", ADMFLAG_UNBAN|ADMFLAG_ROOT))
+		{
+			LimitBan_GetDisplay(-1, _sDisplay);
+			AddMenuItem(menu, "0", _sDisplay);
+		}
+	} else {
+		if (CheckCommandAccess(client, "sm_unban", ADMFLAG_UNBAN | ADMFLAG_ROOT)){
+			AddMenuItem(menu, "0", "Permanent");
+			AddMenuItem(menu, "10", "10 Minutes");
+			AddMenuItem(menu, "30", "30 Minutes");
+			AddMenuItem(menu, "60", "1 Hour");
+			AddMenuItem(menu, "240", "4 Hours");
+			AddMenuItem(menu, "1440", "1 Day");
+			AddMenuItem(menu, "10080", "1 Week");
+		} else {
+			AddMenuItem(menu, "10", "10 Minutes");
+			AddMenuItem(menu, "30", "30 Minutes");
+			AddMenuItem(menu, "60", "1 Hour");
+			AddMenuItem(menu, "240", "4 Hours");
+			AddMenuItem(menu, "1440", "1 Day");
+			AddMenuItem(menu, "10080", "1 Week");
+		}
+	}
+
+	DisplayMenu(menu, client, MENU_TIME_FOREVER);
 }
 
 stock void ResetMenu()
