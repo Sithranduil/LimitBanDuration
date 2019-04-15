@@ -1007,7 +1007,6 @@ stock void DisplayBanTargetMenu(int client)
 
 stock DisplayBanTimeMenu(client)
 {
-	PrintToChat(client, "other3");
 	#if defined DEBUG
 	LogToFile(logFile, "DisplayBanTimeMenu()");
 	#endif
