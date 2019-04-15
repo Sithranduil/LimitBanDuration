@@ -115,8 +115,7 @@ int
 Handle
 	ConfigParser
 	, hTopMenu = INVALID_HANDLE
-	, TimeMenuHandle /* Menu file globals */
-	, ReasonMenuHandle
+	, ReasonMenuHandle /* Menu file globals */
 	, HackingMenuHandle
 	, g_hFwd_OnBanAdded
 	, g_hFwd_OnReportAdded
@@ -181,12 +180,6 @@ public OnPluginStart()
 
 	RegConsoleCmd("say", ChatHook);
 	RegConsoleCmd("say_team", ChatHook);
-
-	if ((TimeMenuHandle = CreateMenu(MenuHandler_BanTimeList, MenuAction_Select|MenuAction_Cancel|MenuAction_DrawItem)) != INVALID_HANDLE)
-	{
-		SetMenuPagination(TimeMenuHandle, 8);
-		SetMenuExitBackButton(TimeMenuHandle, true);
-	}
 
 	if ((ReasonMenuHandle = CreateMenu(ReasonSelected)) != INVALID_HANDLE)
 	{
@@ -987,23 +980,11 @@ stock void DisplayBanTargetMenu(int client)
 
 stock void DisplayBanTimeMenu(int client)
 {
-	#if defined DEBUG
-	LogToFile(logFile, "DisplayBanTimeMenu()");
-	#endif
-
-	char title[100];
-	FormatEx(title, sizeof(title), "%T:", "Ban player", client);
-	SetMenuTitle(TimeMenuHandle, title);
-
-	DisplayMenu(TimeMenuHandle, client, MENU_TIME_FOREVER);
+	
 }
 
 stock void ResetMenu()
 {
-	if (TimeMenuHandle != INVALID_HANDLE)
-	{
-		RemoveAllMenuItems(TimeMenuHandle);
-	}
 
 	if (ReasonMenuHandle != INVALID_HANDLE)
 	{
@@ -2255,13 +2236,6 @@ public SMCResult:ReadConfig_KeyValue(Handle:smc, const String:key[], const Strin
 			if (HackingMenuHandle != INVALID_HANDLE)
 			{
 				AddMenuItem(HackingMenuHandle, key, value);
-			}
-		}
-		case ConfigStateTime:
-		{
-			if (StringToInt(key) > -1 && TimeMenuHandle != INVALID_HANDLE)
-			{
-				AddMenuItem(TimeMenuHandle, key, value);
 			}
 		}
 	}
