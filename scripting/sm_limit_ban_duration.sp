@@ -13,10 +13,10 @@
 #include <sourcemod>
 #include <sm_limit_ban_duration>
 #undef REQUIRE_PLUGIN
-#tryinclude <sourcebans>
+#tryinclude <sourcebanspp>
 
-#if !defined _sourcebans_included
-	native SBBanPlayer(client, target, time, String:reason[]);
+#if !defined _sourcebanspp_included
+	native SBPP_BanPlayer(client, target, time, String:reason[]);
 #endif
 
 #define PLUGIN_VERSION "1.0.2"
@@ -331,7 +331,7 @@ Bool_IssueBan(client, index, const String:buffer[])
 	_iLength += BreakString(buffer[_iLength], _sBuffer, sizeof(_sBuffer));
 	strcopy(_sBuffer, sizeof(_sBuffer), buffer[_iLength]);
 	if(g_bSourceBans)
-		SourceBans_BanPlayer(client, _iTarget, g_iDurationLength[index], _sBuffer);
+		SBPP_BanPlayer(client, _iTarget, g_iDurationLength[index], _sBuffer);
 	else
 		BanClient(_iTarget, g_iDurationLength[index], BANFLAG_AUTO, _sBuffer);
 	return true;
